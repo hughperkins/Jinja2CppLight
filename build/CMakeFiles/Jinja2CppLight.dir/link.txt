@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC  -std=c++11 -O2 -g -DNDEBUG   -shared -Wl,-soname,libJinja2CppLight.so -o libJinja2CppLight.so CMakeFiles/Jinja2CppLight.dir/src/Jinja2CppLight.cpp.o CMakeFiles/Jinja2CppLight.dir/src/stringhelper.cpp.o 

@@ -1,0 +1,1 @@
+/usr/bin/c++   -O2 -g -DNDEBUG    CMakeFiles/testjinja2light.dir/test/testJinja2CppLight.cpp.o  -o testjinja2light -rdynamic 

@@ -3,7 +3,6 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Jinja2CppLight](#jinja2cpplight)
-- [Why didn't I use one of the existing template libraries?](#why-didnt-i-use-one-of-the-existing-template-libraries)
 - [How to use?](#how-to-use)
   - [overview](#overview)
   - [examples](#examples)
@@ -29,15 +28,6 @@ Lightweight templating engine for C++, based on Jinja2
   * variable substitution
   * for loops
   * including nested for loops
-
-# Why didn't I use one of the existing template libraries?
-
-* one of them has boost as a dependency, which is a major task to build/make available on Windows
-* one of them has QT as a dependency
-* one of them supports only variable substitution, no for loops :-P
-* one of them uses xml syntax
-
-After looking around a bit, I wrote this one :-)
 
 # How to use?
 

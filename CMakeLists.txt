@@ -6,8 +6,13 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(UNIX)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
+
+# https://cmake.org/Wiki/CMake_RPATH_handling
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+SET(CMAKE_MACOSX_RPATH TRUE)
 
 execute_process(COMMAND python -V ERROR_VARIABLE python_test)
 if(${python_test} MATCHES "Python 2\\.7\\..*")
@@ -31,10 +36,10 @@ if(PYTHON_AVAILABLE)
 endif(PYTHON_AVAILABLE)
 
 if(UNIX)
-add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
-target_link_libraries(jinja2cpplight_gtest pthread)
+    add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
+    target_link_libraries(jinja2cpplight_gtest pthread)
 else()
-add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
+    add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
 endif()
 target_include_directories(jinja2cpplight_gtest PRIVATE thirdparty/gtest)
 

@@ -120,11 +120,11 @@ make
 
 After building, as above, on linux:
 ```bash
-./unittests
+./jinja2cpplight_unittests
 ```
 on Windows, from the Release directory folder:
 ```
-unittests
+jinja2cpplight_unittests
 ```
 
 # License

@@ -29,4 +29,5 @@
 *.app
 
 build/
+dist/
 

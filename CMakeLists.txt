@@ -31,15 +31,21 @@ if(PYTHON_AVAILABLE)
 endif(PYTHON_AVAILABLE)
 
 if(UNIX)
-add_library(gtest SHARED thirdparty/gtest/gtest-all.cc)
-target_link_libraries(gtest pthread)
+add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
+target_link_libraries(jinja2cpplight_gtest pthread)
 else()
-add_library(gtest thirdparty/gtest/gtest-all.cc)
+add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
 endif()
-target_include_directories(gtest PRIVATE thirdparty/gtest)
+target_include_directories(jinja2cpplight_gtest PRIVATE thirdparty/gtest)
 
-add_executable(unittests thirdparty/gtest/gtest_main.cc test/testJinja2CppLight.cpp test/teststringhelper.cpp)
-target_link_libraries(unittests gtest)
-target_link_libraries(unittests Jinja2CppLight)
-target_include_directories(unittests PRIVATE thirdparty/gtest)
+add_executable(jinja2cpplight_unittests thirdparty/gtest/gtest_main.cc test/testJinja2CppLight.cpp test/teststringhelper.cpp)
+target_link_libraries(jinja2cpplight_unittests jinja2cpplight_gtest)
+target_link_libraries(jinja2cpplight_unittests Jinja2CppLight)
+target_include_directories(jinja2cpplight_unittests PRIVATE thirdparty/gtest)
+
+ INSTALL(TARGETS jinja2cpplight_gtest jinja2cpplight_unittests Jinja2CppLight
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+)
 

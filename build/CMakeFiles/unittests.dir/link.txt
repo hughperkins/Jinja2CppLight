@@ -1,1 +1,0 @@
-/usr/bin/c++    -std=c++11 -O2 -g -DNDEBUG    CMakeFiles/unittests.dir/thirdparty/gtest/gtest_main.cc.o CMakeFiles/unittests.dir/test/testJinja2CppLight.cpp.o CMakeFiles/unittests.dir/test/teststringhelper.cpp.o  -o unittests -rdynamic libgtest.so libJinja2CppLight.so -lpthread -Wl,-rpath,/home/user/git/Jinja2CppLight/build 

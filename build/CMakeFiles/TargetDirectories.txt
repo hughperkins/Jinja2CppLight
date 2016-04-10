@@ -1,4 +1,0 @@
-/home/user/git/Jinja2CppLight/build/CMakeFiles/Jinja2CppLight.dir
-/home/user/git/Jinja2CppLight/build/CMakeFiles/cog.dir
-/home/user/git/Jinja2CppLight/build/CMakeFiles/gtest.dir
-/home/user/git/Jinja2CppLight/build/CMakeFiles/unittests.dir

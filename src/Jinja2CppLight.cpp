@@ -62,7 +62,7 @@ Template &Template::setValue( std::string name, std::string value ) {
 }
 std::string Template::render() {
 //    cout << "tempalte::render root=" << root << endl;
-    int finalPos = eatSection(0, root );
+    size_t finalPos = eatSection(0, root );
     cout << finalPos << " vs " << sourceCode.length() << endl;
     if( finalPos != sourceCode.length() ) {
         root->print("");
@@ -86,7 +86,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
 //    string updatedString = "";
     while( true ) {
 //        cout << "pos: " << pos << endl;
-        int controlChangeBegin = sourceCode.find( "{%", pos );
+        size_t controlChangeBegin = sourceCode.find( "{%", pos );
 //        cout << "controlChangeBegin: " << controlChangeBegin << endl;
         if( controlChangeBegin == string::npos ) {
             //updatedString += doSubstitutions( sourceCode.substr( pos ), valueByName );
@@ -98,7 +98,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
             controlSection->sections.push_back( code );
             return sourceCode.length();
         } else {
-            int controlChangeEnd = sourceCode.find( "%}", controlChangeBegin );
+            size_t controlChangeEnd = sourceCode.find( "%}", controlChangeBegin );
             if( controlChangeEnd == string::npos ) {
                 throw render_error( "control section unterminated: " + sourceCode.substr( controlChangeBegin, 40 ) );
             }
@@ -173,7 +173,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 forSection->varName = varname;
                 pos = eatSection( controlChangeEnd + 2, forSection );
                 controlSection->sections.push_back(forSection);
-                int controlEndEndPos = sourceCode.find("%}", pos );
+                size_t controlEndEndPos = sourceCode.find("%}", pos );
                 if( controlEndEndPos == string::npos ) {
                     throw render_error("No control end section found at: " + sourceCode.substr(pos ) );
                 }
@@ -219,7 +219,7 @@ STATIC std::string Template::doSubstitutions( std::string sourceCode, std::map< 
     if( startI == 1 ) {
         templatedString = splitSource[0];
     }
-    for( int i = startI; i < splitSource.size(); i++ ) {
+    for( size_t i = startI; i < splitSource.size(); i++ ) {
         vector<string> thisSplit = split( splitSource[i], "}}" );
         string name = trim( thisSplit[0] );
 //        cout << "name: " << name << endl;

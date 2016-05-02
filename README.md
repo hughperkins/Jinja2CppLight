@@ -127,6 +127,10 @@ on Windows, from the Release directory folder:
 jinja2cpplight_unittests
 ```
 
+# Related projects
+
+For an alternative approach, using lua as a templating scripting language, see [luacpptemplater](https://github.com/hughperkins/luacpptemplater)
+
 # License
 
 Mozilla Public License

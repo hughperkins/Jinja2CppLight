@@ -28,6 +28,7 @@ Lightweight templating engine for C++, based on Jinja2
   * variable substitution
   * for loops
   * including nested for loops
+  * if statements - partially: only if variable exists or not
 
 # How to use?
 
@@ -79,6 +80,17 @@ b[1] = image[1];
 
 )d";
     EXPECT_EQ( expectedResult, result );
+```
+
+simple if condition:
+```
+    const std::string source = "abc{% if its %}def{% endif %}ghi";
+    Template mytemplate(source);
+    mytemplate.setValue("its", 3);
+    const std::string result = mytemplate.render();
+    std::cout << "[" << result << "]" << endl;
+    const std::string expectedResult = "abcdefghi";
+    EXPECT_EQ(expectedResult, result);
 ```
 
 # Building

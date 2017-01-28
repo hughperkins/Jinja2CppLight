@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 #include <stdexcept>
+#include <sstream>
 
 #define VIRTUAL virtual
 #define STATIC static
@@ -34,6 +35,7 @@ class Value {
 public:
     virtual ~Value() {}
     virtual std::string render() = 0;
+    virtual bool isTrue() const = 0;
 };
 class IntValue : public Value {
 public:
@@ -43,6 +45,9 @@ public:
     }
     virtual std::string render() {
         return toString( value );
+    }
+    bool isTrue() const {
+        return value != 0;
     }
 };
 class FloatValue : public Value {
@@ -54,6 +59,9 @@ public:
     virtual std::string render() {
         return toString( value );
     }
+    bool isTrue() const {
+        return value != 0.0;
+    }
 };
 class StringValue : public Value {
 public:
@@ -63,6 +71,9 @@ public:
     }
     virtual std::string render() {
         return value;
+    }
+    bool isTrue() const {
+        return !value.empty();
     }
 };
 
@@ -199,6 +210,47 @@ public:
     }    
 };
 
+class IfSection : public ControlSection {
+public:
+    IfSection(const std::string& expression) {
+        parseIfCondition(expression);
+    }
+
+    std::string render(std::map< std::string, Value *> &valueByName) {
+        std::stringstream ss;
+        const bool expressionValue = computeExpression(valueByName);
+        if (expressionValue) {
+            for (size_t j = 0; j < sections.size(); j++) {
+                ss << sections[j]->render(valueByName);
+            }
+        }
+        const std::string renderResult = ss.str();
+        return renderResult;
+    }
+
+    void print(std::string prefix) {
+        std::cout << prefix << "if ( " 
+            << ((m_isNegation) ? "not " : "") 
+            << m_variableName << " ) {" << std::endl;
+        if (true) {
+            for (int i = 0; i < (int)sections.size(); i++) {
+                sections[i]->print(prefix + "    ");
+            }
+        }
+        std::cout << prefix << "}" << std::endl;
+    }
+
+private:
+    //? It determines m_isNegation and m_variableName from @param[in] expression.
+    //? @param[in] expression E.g. "if not myVariable" where myVariable is set by myTemplate.setValue( "myVariable", <any_value> );
+    //?                       The result of this statement is false if myVariable is initialized.
+    void parseIfCondition(const std::string& expression);
+
+    bool computeExpression(const std::map< std::string, Value *> &valueByName) const;
+
+    bool m_isNegation; ///< Tells whether is there "if not" or just "if" at the begin of expression.
+    std::string m_variableName; ///< This simple "if" implementation allows single variable condition only.
+};
 
 }
 

@@ -16,6 +16,13 @@
 
 using namespace std;
 
+namespace
+{
+    const std::string JINJA2_TRUE = "True";
+    const std::string JINJA2_FALSE = "False";
+    const std::string JINJA2_NOT = "not";
+}
+
 namespace Jinja2CppLight {
 
 #undef VIRTUAL
@@ -104,7 +111,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
             }
             string controlChange = trim( sourceCode.substr( controlChangeBegin + 2, controlChangeEnd - controlChangeBegin - 2 ) );
             vector<string> splitControlChange = split( controlChange, " " );
-            if( splitControlChange[0] == "endfor" ) {
+            if( splitControlChange[0] == "endfor" || splitControlChange[0] == "endif") {
                 if( splitControlChange.size() != 1 ) {
                     throw render_error("control section {% " + controlChange + " unrecognized" );
                 }
@@ -186,6 +193,40 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 pos = controlEndEndPos + 2;
 //                tokenStack.push_back("for");
 //                varNameStack.push_back(name);
+            } else if (splitControlChange[0] == "if") {
+                Code *code = new Code();
+                code->startPos = pos;
+                code->endPos = controlChangeBegin;
+                code->templateCode = sourceCode.substr(code->startPos, code->endPos - code->startPos);
+                controlSection->sections.push_back(code);
+                const string word = splitControlChange[1];
+                if (JINJA2_TRUE == word)  {
+                    ;
+                } else if (JINJA2_FALSE == word) {
+                    ;
+                }
+                else if (JINJA2_NOT == word) {
+                    ;
+                }
+                else {
+                    ;
+                }
+                IfSection* ifSection = new IfSection(controlChange);
+
+                pos = eatSection(controlChangeEnd + 2, ifSection);
+                controlSection->sections.push_back(ifSection);
+                size_t controlEndEndPos = sourceCode.find("%}", pos);
+                if (controlEndEndPos == string::npos) {
+                    throw render_error("No control end of any section found at: " + sourceCode.substr(pos));
+                }
+                string controlEnd = sourceCode.substr(pos, controlEndEndPos - pos + 2);
+                string controlEndNorm = replaceGlobal(controlEnd, " ", "");
+                if (controlEndNorm != "{%endif%}") {
+                    throw render_error("No control end section found, expected '{% endif %}', got '" + controlEnd + "'");
+                }
+                //forSection->endPos = controlEndEndPos + 2;
+                pos = controlEndEndPos + 2;
+
             } else {
                 throw render_error("control section {% " + controlChange + " unexpected" );
             }
@@ -233,6 +274,46 @@ STATIC std::string Template::doSubstitutions( std::string sourceCode, std::map< 
         }
     }
     return templatedString;
+}
+
+void IfSection::parseIfCondition(const std::string& expression) {
+    const std::vector<std::string> splittedExpression = split(expression, " ");
+    if (splittedExpression.empty() || splittedExpression[0] != "if") {
+        throw render_error("if statement expected.");
+    }
+
+    std::size_t expressionIndex = 1;
+    if (splittedExpression.size() < expressionIndex + 1) {
+        throw render_error("Any expression expected after if statement.");
+    }
+    m_isNegation = (JINJA2_NOT == splittedExpression[expressionIndex]);
+    expressionIndex += (m_isNegation) ? 1 : 0;
+    if (splittedExpression.size() < expressionIndex + 1) {
+        if (!m_isNegation)
+            throw render_error("Any expression expected after if statement.");
+        else
+            throw render_error("Any expression expected after if not statement.");
+    }
+    m_variableName = splittedExpression[expressionIndex];
+    if (splittedExpression.size() > expressionIndex + 1) {
+        throw render_error(std::string("Unexpected expression after variable name: ") + splittedExpression[expressionIndex + 1]);
+    }
+}
+
+bool IfSection::computeExpression(const std::map< std::string, Value *> &valueByName) const {
+    if (JINJA2_TRUE == m_variableName) {
+        return true ^ m_isNegation;
+    }
+    else if (JINJA2_FALSE == m_variableName) {
+        return false ^ m_isNegation;
+    }
+    else {
+        const bool valueExists = valueByName.count(m_variableName) > 0;
+        if (!valueExists) {
+            return false ^ m_isNegation;
+        }
+        return valueByName.at(m_variableName)->isTrue() ^ m_isNegation;
+    }
 }
 
 }

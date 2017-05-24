@@ -261,6 +261,11 @@ STATIC std::string Template::doSubstitutions( std::string sourceCode, std::map< 
         templatedString = splitSource[0];
     }
     for( size_t i = startI; i < splitSource.size(); i++ ) {
+        if (0 == i && splitSource.size() > 1 && splitSource[i].empty()) // Ignoring initial empty section if there are other sections.
+        {
+            continue;
+        }
+
         vector<string> thisSplit = split( splitSource[i], "}}" );
         string name = trim( thisSplit[0] );
 //        cout << "name: " << name << endl;

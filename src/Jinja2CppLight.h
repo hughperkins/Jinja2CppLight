@@ -12,12 +12,15 @@
 // - variable substitution, ie {{myvar}}
 // - for loops, ie {% for i in range(myvar) %}
 
+#pragma once
+
 #include <string>
 #include <iostream>
 #include <map>
 #include <vector>
 #include <stdexcept>
 #include <sstream>
+#include "stringhelper.h"
 
 #define VIRTUAL virtual
 #define STATIC static

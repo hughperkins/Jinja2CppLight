@@ -12,12 +12,15 @@
 // - variable substitution, ie {{myvar}}
 // - for loops, ie {% for i in range(myvar) %}
 
+#pragma once
+
 #include <string>
 #include <iostream>
 #include <map>
 #include <vector>
 #include <stdexcept>
 #include <sstream>
+#include "stringhelper.h"
 
 #define VIRTUAL virtual
 #define STATIC static
@@ -193,7 +196,6 @@ public:
 class Root : public ControlSection {
 public:
     virtual ~Root() {}
-//    std::vector< ControlSection * >sections;
     virtual std::string render( std::map< std::string, Value *> &valueByName ) {
         std::string resultString = "";
         for( int i = 0; i < (int)sections.size(); i++ ) {

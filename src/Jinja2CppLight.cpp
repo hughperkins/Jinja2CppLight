@@ -68,16 +68,10 @@ Template &Template::setValue( std::string name, std::string value ) {
     return *this;
 }
 std::string Template::render() {
-//    cout << "tempalte::render root=" << root << endl;
     size_t finalPos = eatSection(0, root );
-    cout << finalPos << " vs " << sourceCode.length() << endl;
     if( finalPos != sourceCode.length() ) {
-        root->print("");
         throw render_error("some sourcecode found at end: " + sourceCode.substr( finalPos ) );
     }
-//    cout << "tempalte::render root=" << root << endl;
-    root->print("");
-//    cout << "tempalte::render root=" << root << endl;
     return root->render(valueByName);
 }
 

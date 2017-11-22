@@ -53,4 +53,5 @@ target_include_directories(jinja2cpplight_unittests PRIVATE thirdparty/gtest)
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
 )
+install(FILES src/Jinja2CppLight.h src/stringhelper.h DESTINATION include/Jinja2CppLight)
 

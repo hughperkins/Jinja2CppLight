@@ -25,7 +25,6 @@ endif()
 include_directories(.)
 include_directories(src)
 
-add_library(Jinja2CppLight SHARED src/Jinja2CppLight.cpp src/stringhelper.cpp)
 
 if(PYTHON_AVAILABLE)
     add_custom_target(
@@ -36,12 +35,16 @@ if(PYTHON_AVAILABLE)
 endif(PYTHON_AVAILABLE)
 
 if(UNIX)
+    set (LIB_BUILD_TYPE SHARED)
     add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
     target_link_libraries(jinja2cpplight_gtest pthread)
 else()
+    set (LIB_BUILD_TYPE STATIC)
     add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
 endif()
 target_include_directories(jinja2cpplight_gtest PRIVATE thirdparty/gtest)
+
+add_library(Jinja2CppLight ${LIB_BUILD_TYPE} src/Jinja2CppLight.cpp src/stringhelper.cpp)
 
 add_executable(jinja2cpplight_unittests thirdparty/gtest/gtest_main.cc test/testJinja2CppLight.cpp test/teststringhelper.cpp)
 target_link_libraries(jinja2cpplight_unittests jinja2cpplight_gtest)

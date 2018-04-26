@@ -47,6 +47,8 @@ STATIC bool Template::isNumber( std::string astring, int *p_value ) {
 }
 VIRTUAL Template::~Template() {
     valueByName.clear();
+
+    delete root;
 }
 Template &Template::setValue( std::string name, int value ) {
     valueByName[ name ] = std::make_shared<IntValue>( value );
@@ -61,7 +63,7 @@ Template &Template::setValue( std::string name, std::string value ) {
     return *this;
 }
 
-Template&Template::setValue(string name, TupleValue value) {
+Template&Template::setValue( std::string name, TupleValue value) {
     valueByName[ name ] = std::make_shared<TupleValue>( std::move(value) );
     return *this;
 

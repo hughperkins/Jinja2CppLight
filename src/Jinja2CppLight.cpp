@@ -167,7 +167,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 }
                 int beginValue = 0; // default for now...
 //                cout << "for loop start=" << beginValue << " end=" << endValue << endl;
-                ForSection *forSection = new ForSection();
+                ForRangeSection *forSection = new ForRangeSection();
                 forSection->startPos = controlChangeEnd + 2;
                 forSection->loopStart = beginValue;
                 forSection->loopEnd = endValue;

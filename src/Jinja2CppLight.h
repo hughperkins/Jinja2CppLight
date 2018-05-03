@@ -136,7 +136,7 @@ public:
     }
 };
 
-class ForSection : public ControlSection {
+class ForRangeSection : public ControlSection {
 public:
     int loopStart;
     int loopEnd;

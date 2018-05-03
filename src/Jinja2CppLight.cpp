@@ -67,6 +67,11 @@ Template &Template::setValue( std::string name, std::string value ) {
     valueByName[ name ] = floatValue;
     return *this;
 }
+Template &Template::setValue( std::string name, std::vector<std::string> value ) {
+    VectorValue *vectorValue = new VectorValue( value );
+    valueByName[ name ] = vectorValue;
+    return *this;
+}
 std::string Template::render() {
     size_t finalPos = eatSection(0, root );
     if( finalPos != sourceCode.length() ) {

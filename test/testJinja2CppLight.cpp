@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "test/gtest_supp.h"
@@ -30,6 +31,30 @@ TEST( testJinja2CppLight, basicsubstitution ) {
     string expectedResult = R"DELIM(
         This is my 3 template.  It's 12.123...
         Today's weather is rain.
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+}
+TEST( testJinja2CppLight, vectorsubstitution ) {
+    string source = R"DELIM(
+        Here's the list: {{ values }}...
+        {% if maybe %}{{ maybe }}{% endif %}
+        {% if maybenot %}{{ maybenot }}{% endif %}
+        We're going to print it anyway: {{ maybenot }}
+    )DELIM";
+    
+    std::vector<std::string> values = { "one", "two", "three" };
+    std::vector<std::string> maybe = { "There is one" };
+    std::vector<std::string> maybenot;
+    Template mytemplate( source );
+    mytemplate.setValue( "values", values );
+    mytemplate.setValue( "maybe", maybe );
+    mytemplate.setValue( "maybenot", maybenot );
+    string result = mytemplate.render();
+    const string expectedResult = R"DELIM(
+        Here's the list: one two three...
+        There is one
+        
+        We're going to print it anyway: 
     )DELIM";
     EXPECT_EQ( expectedResult, result );
 }

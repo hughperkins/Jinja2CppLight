@@ -20,6 +20,7 @@
 #include <vector>
 #include <stdexcept>
 #include <sstream>
+#include <vector>
 #include "stringhelper.h"
 
 #define VIRTUAL virtual
@@ -79,6 +80,28 @@ public:
         return !value.empty();
     }
 };
+class VectorValue : public Value {
+public:
+    std::vector<std::string> value;
+    VectorValue( std::vector<std::string> value ) :
+        value( value ) {
+    }
+    // Not intended to be rendered directly
+    virtual std::string render() {
+        std::string r;
+        if (!value.empty()) {
+            r = value[0];
+        }
+        for (std::size_t i = 1; i < value.size(); ++i) {
+            r += " " + value[i];
+        }
+        
+        return r;
+    }
+    bool isTrue() const {
+        return !value.empty();
+    }
+};
 
 class Root;
 class ControlSection;
@@ -102,6 +125,7 @@ public:
     Template &setValue( std::string name, int value );
     Template &setValue( std::string name, float value );
     Template &setValue( std::string name, std::string value );
+    Template &setValue( std::string name, std::vector<std::string> value );
     std::string render();
     void print(ControlSection *section);
     int eatSection( int pos, ControlSection *controlSection );

@@ -149,47 +149,72 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 }
                 rangeString = replaceGlobal( rangeString, " ", "" );
                 vector<string> splitRangeString = split( rangeString, "(" );
-                if( splitRangeString[0] != "range" ) {
-                    throw render_error("control section {% " + controlChange + " unexpected: third word should start with 'range'" );
-                }
-                if( splitRangeString.size() != 2 ) {
-                    throw render_error("control section " + controlChange + " unexpected: should be in format 'range(somevar)' or 'range(somenumber)'" );
-                }
-                string name = split( splitRangeString[1], ")" )[0];
-//                cout << "for range name: " << name << endl;
-                int endValue;
-                if( isNumber( name, &endValue ) ) {
-                } else {
-                    if( valueByName.find( name ) != valueByName.end() ) {
-                        IntValue *intValue = dynamic_cast< IntValue * >( valueByName[ name ] );
-                        if( intValue == 0 ) {
-                            throw render_error("for loop range var " + name + " must be an int (but it's not)");
-                        }
-                        endValue = intValue->value;
+                if( splitRangeString[0] == "range" ) {
+                    if( splitRangeString.size() != 2 ) {
+                        throw render_error("control section " + controlChange + " unexpected: should be in format 'range(somevar)' or 'range(somenumber)'" );
+                    }
+                    string name = split( splitRangeString[1], ")" )[0];
+    //                cout << "for range name: " << name << endl;
+                    int endValue;
+                    if( isNumber( name, &endValue ) ) {
                     } else {
-                        throw render_error("for loop range var " + name + " not recognized");
-                    }                    
+                        if( valueByName.find( name ) != valueByName.end() ) {
+                            IntValue *intValue = dynamic_cast< IntValue * >( valueByName[ name ] );
+                            if( intValue == 0 ) {
+                                throw render_error("for loop range var " + name + " must be an int (but it's not)");
+                            }
+                            endValue = intValue->value;
+                        } else {
+                            throw render_error("for loop range var " + name + " not recognized");
+                        }                    
+                    }
+                    int beginValue = 0; // default for now...
+    //                cout << "for loop start=" << beginValue << " end=" << endValue << endl;
+                    ForRangeSection *forSection = new ForRangeSection();
+                    forSection->startPos = controlChangeEnd + 2;
+                    forSection->loopStart = beginValue;
+                    forSection->loopEnd = endValue;
+                    forSection->varName = varname;
+                    pos = eatSection( controlChangeEnd + 2, forSection );
+                    controlSection->sections.push_back(forSection);
+                    size_t controlEndEndPos = sourceCode.find("%}", pos );
+                    if( controlEndEndPos == string::npos ) {
+                        throw render_error("No control end section found at: " + sourceCode.substr(pos ) );
+                    }
+                    string controlEnd = sourceCode.substr( pos, controlEndEndPos - pos + 2 );
+                    string controlEndNorm = replaceGlobal( controlEnd, " ", "" );
+                    if( controlEndNorm != "{%endfor%}" ) {
+                        throw render_error("No control end section found, expected '{% endfor %}', got '" + controlEnd + "'" );
+                    }
+                    forSection->endPos = controlEndEndPos + 2;
+                    pos = controlEndEndPos + 2;
+                } else {
+                    const std::string name = rangeString;
+                    if (valueByName.find( name ) != valueByName.end() ) {
+                        VectorValue *value = dynamic_cast< VectorValue * >( valueByName[ name ] );
+                        if( value == 0 ) {
+                            throw render_error("for loop var " + name + " must be a range or a vector (but it's neither)");
+                        }
+                    } else {
+                        throw render_error("for loop var " + name + " not recognized");
+                    }
+                    ForSection *forSection = new ForSection();
+                    forSection->varName = varname;
+                    forSection->vecVarName = name;
+                    
+                    pos = eatSection( controlChangeEnd + 2, forSection );
+                    controlSection->sections.push_back(forSection);
+                    size_t controlEndEndPos = sourceCode.find("%}", pos );
+                    if( controlEndEndPos == string::npos ) {
+                        throw render_error("No control end section found at: " + sourceCode.substr(pos ) );
+                    }
+                    string controlEnd = sourceCode.substr( pos, controlEndEndPos - pos + 2 );
+                    string controlEndNorm = replaceGlobal( controlEnd, " ", "" );
+                    if( controlEndNorm != "{%endfor%}" ) {
+                        throw render_error("No control end section found, expected '{% endfor %}', got '" + controlEnd + "'" );
+                    }
+                    pos = controlEndEndPos + 2;
                 }
-                int beginValue = 0; // default for now...
-//                cout << "for loop start=" << beginValue << " end=" << endValue << endl;
-                ForRangeSection *forSection = new ForRangeSection();
-                forSection->startPos = controlChangeEnd + 2;
-                forSection->loopStart = beginValue;
-                forSection->loopEnd = endValue;
-                forSection->varName = varname;
-                pos = eatSection( controlChangeEnd + 2, forSection );
-                controlSection->sections.push_back(forSection);
-                size_t controlEndEndPos = sourceCode.find("%}", pos );
-                if( controlEndEndPos == string::npos ) {
-                    throw render_error("No control end section found at: " + sourceCode.substr(pos ) );
-                }
-                string controlEnd = sourceCode.substr( pos, controlEndEndPos - pos + 2 );
-                string controlEndNorm = replaceGlobal( controlEnd, " ", "" );
-                if( controlEndNorm != "{%endfor%}" ) {
-                    throw render_error("No control end section found, expected '{% endfor %}', got '" + controlEnd + "'" );
-                }
-                forSection->endPos = controlEndEndPos + 2;
-                pos = controlEndEndPos + 2;
 //                tokenStack.push_back("for");
 //                varNameStack.push_back(name);
             } else if (splitControlChange[0] == "if") {

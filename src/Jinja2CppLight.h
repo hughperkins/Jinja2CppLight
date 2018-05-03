@@ -193,6 +193,41 @@ public:
     }
 };
 
+class ForSection : public ControlSection {
+public:
+    std::string varName;
+    std::string vecVarName;
+    virtual std::string render( std::map< std::string, Value *> &valueByName ) {
+        std::string result = "";
+        if( valueByName.find( varName ) != valueByName.end() ) {
+            throw render_error("variable " + varName + " already exists in this context" );
+        }
+        
+        const VectorValue *vecValue = dynamic_cast< VectorValue * >( valueByName.at( vecVarName ) ); // throws if something happened to the VectorValue
+        if (!vecValue) {
+            throw render_error("variable " + vecVarName + " no longer valid in context" );
+        }
+        const std::vector<std::string> &vecValues = vecValue->value;
+        for ( std::vector<std::string>::const_iterator itr = vecValues.cbegin(); itr != vecValues.cend(); ++itr ) {
+            valueByName[varName] = new StringValue( *itr );
+            for( std::size_t j = 0; j < sections.size(); ++j) {
+                result += sections[j]->render( valueByName );
+            }
+            delete valueByName[varName];
+            valueByName.erase( varName );
+        }
+        
+        return result;
+    }
+    virtual void print( std::string prefix ) {
+        std::cout << prefix << "For ( " << varName << " in " << vecVarName << " ) {" << std::endl;
+        for( std::size_t i = 0; i < sections.size(); i++ ){
+            sections[i]->print( prefix + "    " );
+        }
+        std::cout << prefix << "}" << std::endl;
+    }
+};
+
 class Code : public ControlSection {
 public:
 //    vector< ControlSection * >sections;

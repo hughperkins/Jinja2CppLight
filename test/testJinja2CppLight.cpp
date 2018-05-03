@@ -58,6 +58,33 @@ TEST( testJinja2CppLight, vectorsubstitution ) {
     )DELIM";
     EXPECT_EQ( expectedResult, result );
 }
+TEST( testJinja2CppLight, forloop ) {
+    string source = R"DELIM(
+        Shopping list:{% for item in items %}
+          - {{ item }}{% endfor %}
+    )DELIM";
+    
+    std::vector<std::string> shopList = { "eggs", "milk", "vodka" };
+    Template mytemplate0( source );
+    mytemplate0.setValue( "items", shopList );
+    string result = mytemplate0.render();
+    string expectedResult = R"DELIM(
+        Shopping list:
+          - eggs
+          - milk
+          - vodka
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+    
+    shopList.clear();
+    Template mytemplate1( source );
+    mytemplate1.setValue( "items", shopList );
+    result = mytemplate1.render();
+    expectedResult = R"DELIM(
+        Shopping list:
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+}
 TEST( testSpeedTemplates, namemissing ) {
     string source = R"DELIM(
         This is my {{avalue}} template.

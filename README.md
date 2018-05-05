@@ -81,6 +81,28 @@ b[1] = image[1];
 )d";
     EXPECT_EQ( expectedResult, result );
 ```
+```
+    string source = R"DELIM(
+{% for i in its %}
+            a[{{i}}] = image[{{i}}];
+{% endfor %}
+    )DELIM";
+
+    Template mytemplate( source );
+    mytemplate.setValue( "its", TupleValue::create(0, 1.1, "2abc") );
+    string result = mytemplate.render();
+    cout << result << endl;
+    string expectedResult = R"DELIM(
+
+            a[0] = image[0];
+
+            a[1.1] = image[1.1];
+
+            a[2abc] = image[2abc];
+
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+````
 
 simple if condition:
 ```

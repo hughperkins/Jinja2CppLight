@@ -5,8 +5,10 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
 
+set (LIB_BUILD_TYPE STATIC)
 if(UNIX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set (LIB_BUILD_TYPE SHARED)
 endif()
 
 # https://cmake.org/Wiki/CMake_RPATH_handling
@@ -25,7 +27,8 @@ endif()
 include_directories(.)
 include_directories(src)
 
-add_library(Jinja2CppLight SHARED src/Jinja2CppLight.cpp src/stringhelper.cpp)
+
+add_library(Jinja2CppLight ${LIB_BUILD_TYPE} src/Jinja2CppLight.cpp src/stringhelper.cpp)
 
 if(PYTHON_AVAILABLE)
     add_custom_target(

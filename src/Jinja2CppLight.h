@@ -1,7 +1,7 @@
 // Copyright Hugh Perkins 2015 hughperkins at gmail
 //
-// This Source Code Form is subject to the terms of the Mozilla Public License, 
-// v. 2.0. If a copy of the MPL was not distributed with this file, You can 
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file, You can
 // obtain one at http://mozilla.org/MPL/2.0/.
 
 // the intent here is to create a templates library that:
@@ -20,7 +20,7 @@
 #include <vector>
 #include <stdexcept>
 #include <sstream>
-#include <vector>
+#include <memory>
 #include "stringhelper.h"
 
 #define VIRTUAL virtual
@@ -80,37 +80,78 @@ public:
         return !value.empty();
     }
 };
-class VectorValue : public Value {
+
+class TupleValue : public Value
+{
 public:
-    std::vector<std::string> value;
-    VectorValue( std::vector<std::string> value ) :
-        value( value ) {
+    std::vector<std::shared_ptr<Value>> values;
+
+    TupleValue &addValue( int value ) {
+        values.push_back(std::make_shared<IntValue>(value));
+        return *this;
     }
-    // Not intended to be rendered directly
-    virtual std::string render() {
-        std::string r;
-        if (!value.empty()) {
-            r = value[0];
-        }
-        for (std::size_t i = 1; i < value.size(); ++i) {
-            r += " " + value[i];
-        }
-        
-        return r;
+    TupleValue &addValue( double value ) {
+        values.push_back(std::make_shared<FloatValue>(value));
+        return *this;
     }
+    TupleValue &addValue( std::string value ) {
+        values.push_back(std::make_shared<StringValue>(std::move(value)));
+        return *this;
+    }
+    TupleValue &addValue( TupleValue value ) {
+        values.push_back(std::make_shared<TupleValue>(std::move(value)));
+        return *this;
+    }
+
     bool isTrue() const {
-        return !value.empty();
+        return !values.empty();
+    }
+
+    virtual std::string render() {
+        std::string result = "{";
+        bool isFirst = true;
+
+        for (auto& val : values) {
+            if (isFirst)
+                isFirst = false;
+            else
+                result += ", ";
+
+            result += val ? val->render() : "<empty>";
+        }
+
+        result += "}";
+        return result;
+    }
+
+    template<typename ... Args>
+    static TupleValue create(Args&& ... args) {
+        TupleValue result;
+
+        createImpl (result, std::forward<Args>(args)...);
+
+        return result;
+    }
+private:
+    static void createImpl(TupleValue&) {
+    }
+
+    template<typename Arg, typename ... Args>
+    static void createImpl(TupleValue& result, Arg&& arg, Args&& ... args) {
+        result.addValue(std::forward<Arg>(arg));
+        createImpl (result, std::forward<Args>(args)...);
     }
 };
 
 class Root;
 class ControlSection;
+typedef std::map < std::string, std::shared_ptr<Value> > ValueMap;
 
 class Template {
 public:
     std::string sourceCode;
 
-    std::map< std::string, Value * > valueByName;
+    ValueMap valueByName;
 //    std::vector< std::string > varNameStack;
     Root *root;
 
@@ -125,11 +166,11 @@ public:
     Template &setValue( std::string name, int value );
     Template &setValue( std::string name, float value );
     Template &setValue( std::string name, std::string value );
-    Template &setValue( std::string name, std::vector<std::string> value );
+    Template&setValue( std::string name, TupleValue value);
     std::string render();
     void print(ControlSection *section);
     int eatSection( int pos, ControlSection *controlSection );
-    STATIC std::string doSubstitutions( std::string sourceCode, std::map< std::string, Value *> valueByName );
+    STATIC std::string doSubstitutions( std::string sourceCode, const ValueMap &valueByName );
 
     // [[[end]]]
 };
@@ -137,7 +178,7 @@ public:
 class ControlSection {
 public:
     std::vector< ControlSection * >sections;
-    virtual std::string render( std::map< std::string, Value *> &valueByName ) = 0;
+    virtual std::string render( ValueMap &valueByName ) = 0;
     virtual void print() {
         print("");
     }
@@ -150,7 +191,7 @@ public:
     int sourceCodePosStart;
     int sourceCodePosEnd;
 
-//    std::string render( std::map< std::string, Value *> valueByName );
+//    std::string render( ValueMap valueByName );
     virtual void print( std::string prefix ) {
         std::cout << prefix << "Container ( " << sourceCodePosStart << ", " << sourceCodePosEnd << " ) {" << std::endl;
         for( int i = 0; i < (int)sections.size(); i++ ) {
@@ -167,25 +208,24 @@ public:
     std::string varName;
     int startPos;
     int endPos;
-    std::string render( std::map< std::string, Value *> &valueByName ) {
+    std::string render( ValueMap &valueByName ) {
         std::string result = "";
 //        bool nameExistsBefore = false;
         if( valueByName.find( varName ) != valueByName.end() ) {
             throw render_error("variable " + varName + " already exists in this context" );
         }
-        for( int i = loopStart; i < loopEnd; i++ ) {
-            valueByName[varName] = new IntValue( i );
+        for (auto i = loopStart; i < loopEnd; ++i ){
+            valueByName[varName] = std::make_shared<IntValue>( i );
             for( size_t j = 0; j < sections.size(); j++ ) {
                 result += sections[j]->render( valueByName );
             }
-            delete valueByName[varName];
             valueByName.erase( varName );
         }
         return result;
     }
     //Container *contents;
     virtual void print( std::string prefix ) {
-        std::cout << prefix << "For ( " << varName << " in range(" << loopStart << ", " << loopEnd << " ) {" << std::endl;
+        std::cout << prefix << "For ( " << varName << " in range( ) {" << std::endl;
         for( int i = 0; i < (int)sections.size(); i++ ) {
             sections[i]->print( prefix + "    " );
         }
@@ -196,31 +236,31 @@ public:
 class ForSection : public ControlSection {
 public:
     std::string varName;
-    std::string vecVarName;
-    virtual std::string render( std::map< std::string, Value *> &valueByName ) {
+    std::string tupVarName;
+    virtual std::string render( ValueMap &valueByName ) {
         std::string result = "";
         if( valueByName.find( varName ) != valueByName.end() ) {
             throw render_error("variable " + varName + " already exists in this context" );
         }
         
-        const VectorValue *vecValue = dynamic_cast< VectorValue * >( valueByName.at( vecVarName ) ); // throws if something happened to the VectorValue
-        if (!vecValue) {
-            throw render_error("variable " + vecVarName + " no longer valid in context" );
+        const std::shared_ptr<Value> &val = valueByName.at( tupVarName ); // throws if something happened to the TupleValue
+        const TupleValue *tupValue = dynamic_cast< TupleValue * >( val.get() );
+        if (!tupValue) {
+            throw render_error("variable " + tupVarName + " no longer valid in context" );
         }
-        const std::vector<std::string> &vecValues = vecValue->value;
-        for ( std::vector<std::string>::const_iterator itr = vecValues.cbegin(); itr != vecValues.cend(); ++itr ) {
-            valueByName[varName] = new StringValue( *itr );
+        const std::vector<std::shared_ptr<Value>> &tupValues = tupValue->values;
+        for ( auto itr = tupValues.cbegin(); itr != tupValues.cend(); ++itr ) {
+            valueByName[ varName ] = *itr;
             for( std::size_t j = 0; j < sections.size(); ++j) {
                 result += sections[j]->render( valueByName );
             }
-            delete valueByName[varName];
             valueByName.erase( varName );
         }
         
         return result;
     }
     virtual void print( std::string prefix ) {
-        std::cout << prefix << "For ( " << varName << " in " << vecVarName << " ) {" << std::endl;
+        std::cout << prefix << "For ( " << varName << " in " << tupVarName << " ) {" << std::endl;
         for( std::size_t i = 0; i < sections.size(); i++ ){
             sections[i]->print( prefix + "    " );
         }
@@ -243,7 +283,7 @@ public:
         }
         std::cout << prefix << "}" << std::endl;
     }
-    virtual std::string render( std::map< std::string, Value *> &valueByName ) {
+    virtual std::string render( ValueMap &valueByName ) {
 //        std::string templateString = sourceCode.substr( startPos, endPos - startPos );
 //        std::cout << "Code section, rendering [" << templateCode << "]" << std::endl;
         std::string processed = Template::doSubstitutions( templateCode, valueByName );
@@ -255,12 +295,12 @@ public:
 class Root : public ControlSection {
 public:
     virtual ~Root() {}
-    virtual std::string render( std::map< std::string, Value *> &valueByName ) {
+    virtual std::string render( ValueMap &valueByName ) {
         std::string resultString = "";
         for( int i = 0; i < (int)sections.size(); i++ ) {
             resultString += sections[i]->render( valueByName );
-        }     
-        return resultString;   
+        }
+        return resultString;
     }
     virtual void print(std::string prefix) {
         std::cout << prefix << "Root {" << std::endl;
@@ -268,7 +308,7 @@ public:
             sections[i]->print( prefix + "    " );
         }
         std::cout << prefix << "}" << std::endl;
-    }    
+    }
 };
 
 class IfSection : public ControlSection {
@@ -277,7 +317,7 @@ public:
         parseIfCondition(expression);
     }
 
-    std::string render(std::map< std::string, Value *> &valueByName) {
+    std::string render(ValueMap &valueByName) {
         std::stringstream ss;
         const bool expressionValue = computeExpression(valueByName);
         if (expressionValue) {
@@ -290,8 +330,8 @@ public:
     }
 
     void print(std::string prefix) {
-        std::cout << prefix << "if ( " 
-            << ((m_isNegation) ? "not " : "") 
+        std::cout << prefix << "if ( "
+            << ((m_isNegation) ? "not " : "")
             << m_variableName << " ) {" << std::endl;
         if (true) {
             for (int i = 0; i < (int)sections.size(); i++) {
@@ -307,7 +347,7 @@ private:
     //?                       The result of this statement is false if myVariable is initialized.
     void parseIfCondition(const std::string& expression);
 
-    bool computeExpression(const std::map< std::string, Value *> &valueByName) const;
+    bool computeExpression(const ValueMap &valueByName) const;
 
     bool m_isNegation; ///< Tells whether is there "if not" or just "if" at the begin of expression.
     std::string m_variableName; ///< This simple "if" implementation allows single variable condition only.

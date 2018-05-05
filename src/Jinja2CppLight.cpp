@@ -1,7 +1,7 @@
 // Copyright Hugh Perkins 2015 hughperkins at gmail
 //
-// This Source Code Form is subject to the terms of the Mozilla Public License, 
-// v. 2.0. If a copy of the MPL was not distributed with this file, You can 
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file, You can
 // obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <iostream>
@@ -34,7 +34,7 @@ Template::Template( std::string sourceCode ) :
     sourceCode( sourceCode ) {
     root = new Root();
 //    cout << "template::Template root: "  << root << endl;
-}    
+}
 
 STATIC bool Template::isNumber( std::string astring, int *p_value ) {
     istringstream in( astring );
@@ -46,31 +46,27 @@ STATIC bool Template::isNumber( std::string astring, int *p_value ) {
     return false;
 }
 VIRTUAL Template::~Template() {
-    for( map< string, Value * >::iterator it = valueByName.begin(); it != valueByName.end(); it++ ) {
-        delete it->second;
-    }
     valueByName.clear();
+
     delete root;
 }
 Template &Template::setValue( std::string name, int value ) {
-    IntValue *intValue = new IntValue( value );
-    valueByName[ name ] = intValue;
+    valueByName[ name ] = std::make_shared<IntValue>( value );
     return *this;
 }
 Template &Template::setValue( std::string name, float value ) {
-    FloatValue *floatValue = new FloatValue( value );
-    valueByName[ name ] = floatValue;
+    valueByName[ name ] = std::make_shared<FloatValue>( value );
     return *this;
 }
 Template &Template::setValue( std::string name, std::string value ) {
-    StringValue *floatValue = new StringValue( value );
-    valueByName[ name ] = floatValue;
+    valueByName[ name ] = std::make_shared<StringValue>( std::move(value) );
     return *this;
 }
-Template &Template::setValue( std::string name, std::vector<std::string> value ) {
-    VectorValue *vectorValue = new VectorValue( value );
-    valueByName[ name ] = vectorValue;
+
+Template&Template::setValue( std::string name, TupleValue value) {
+    valueByName[ name ] = std::make_shared<TupleValue>( std::move(value) );
     return *this;
+
 }
 std::string Template::render() {
     size_t finalPos = eatSection(0, root );
@@ -159,7 +155,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                     if( isNumber( name, &endValue ) ) {
                     } else {
                         if( valueByName.find( name ) != valueByName.end() ) {
-                            IntValue *intValue = dynamic_cast< IntValue * >( valueByName[ name ] );
+                            IntValue *intValue = dynamic_cast< IntValue * >( valueByName[ name ].get() );
                             if( intValue == 0 ) {
                                 throw render_error("for loop range var " + name + " must be an int (but it's not)");
                             }
@@ -191,7 +187,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 } else {
                     const std::string name = rangeString;
                     if (valueByName.find( name ) != valueByName.end() ) {
-                        VectorValue *value = dynamic_cast< VectorValue * >( valueByName[ name ] );
+                        TupleValue *value = dynamic_cast< TupleValue * >( valueByName[ name ].get() );
                         if( value == 0 ) {
                             throw render_error("for loop var " + name + " must be a range or a vector (but it's neither)");
                         }
@@ -200,7 +196,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                     }
                     ForSection *forSection = new ForSection();
                     forSection->varName = varname;
-                    forSection->vecVarName = name;
+                    forSection->tupVarName = name;
                     
                     pos = eatSection( controlChangeEnd + 2, forSection );
                     controlSection->sections.push_back(forSection);
@@ -215,8 +211,6 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                     }
                     pos = controlEndEndPos + 2;
                 }
-//                tokenStack.push_back("for");
-//                varNameStack.push_back(name);
             } else if (splitControlChange[0] == "if") {
                 Code *code = new Code();
                 code->startPos = pos;
@@ -274,7 +268,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
 ////    string templatedString = doSubstitutions( sourceCode, valueByName );
 //    return updatedString;
 }
-STATIC std::string Template::doSubstitutions( std::string sourceCode, std::map< std::string, Value *> valueByName ) {
+STATIC std::string Template::doSubstitutions( std::string sourceCode, const ValueMap &valueByName ) {
     int startI = 1;
     if( sourceCode.substr(0,2) == "{{" ) {
         startI = 0;
@@ -293,10 +287,11 @@ STATIC std::string Template::doSubstitutions( std::string sourceCode, std::map< 
         vector<string> thisSplit = split( splitSource[i], "}}" );
         string name = trim( thisSplit[0] );
 //        cout << "name: " << name << endl;
-        if( valueByName.find( name ) == valueByName.end() ) {
+        auto p = valueByName.find( name );
+        if( p == valueByName.end() ) {
             throw render_error( "name " + name + " not defined" );
         }
-        Value *value = valueByName[ name ];
+        auto value = p->second;
         templatedString += value->render();
         if( thisSplit.size() > 0 ) {
             templatedString += thisSplit[1];
@@ -329,7 +324,7 @@ void IfSection::parseIfCondition(const std::string& expression) {
     }
 }
 
-bool IfSection::computeExpression(const std::map< std::string, Value *> &valueByName) const {
+bool IfSection::computeExpression(const ValueMap &valueByName) const {
     if (JINJA2_TRUE == m_variableName) {
         return true ^ m_isNegation;
     }

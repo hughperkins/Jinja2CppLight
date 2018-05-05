@@ -214,13 +214,14 @@ public:
         if( valueByName.find( varName ) != valueByName.end() ) {
             throw render_error("variable " + varName + " already exists in this context" );
         }
+        valueByName[varName] = std::make_shared<IntValue>( 0 );
         for (auto i = loopStart; i < loopEnd; ++i ){
-            valueByName[varName] = std::make_shared<IntValue>( i );
+            dynamic_cast<IntValue*>(valueByName[varName].get())->value = i;
             for( size_t j = 0; j < sections.size(); j++ ) {
                 result += sections[j]->render( valueByName );
             }
-            valueByName.erase( varName );
         }
+        valueByName.erase( varName );
         return result;
     }
     //Container *contents;

@@ -153,7 +153,7 @@ public:
 
     ValueMap valueByName;
 //    std::vector< std::string > varNameStack;
-    Root *root;
+    std::unique_ptr<Root> root;
 
     // [[[cog
     // import cog_addheaders

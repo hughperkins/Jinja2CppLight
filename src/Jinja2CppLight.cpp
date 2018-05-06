@@ -31,10 +31,9 @@ namespace Jinja2CppLight {
 #define STATIC
 
 Template::Template( std::string sourceCode ) :
-    sourceCode( sourceCode ) {
-    root = new Root();
-//    cout << "template::Template root: "  << root << endl;
-}
+    sourceCode( sourceCode ),
+    root( new Root() )
+{}
 
 STATIC bool Template::isNumber( std::string astring, int *p_value ) {
     istringstream in( astring );
@@ -47,8 +46,6 @@ STATIC bool Template::isNumber( std::string astring, int *p_value ) {
 }
 VIRTUAL Template::~Template() {
     valueByName.clear();
-
-    delete root;
 }
 Template &Template::setValue( std::string name, int value ) {
     valueByName[ name ] = std::make_shared<IntValue>( value );
@@ -69,7 +66,7 @@ Template&Template::setValue( std::string name, TupleValue value) {
 
 }
 std::string Template::render() {
-    size_t finalPos = eatSection(0, root );
+    size_t finalPos = eatSection(0, root.get() );
     if( finalPos != sourceCode.length() ) {
         throw render_error("some sourcecode found at end: " + sourceCode.substr( finalPos ) );
     }

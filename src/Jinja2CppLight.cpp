@@ -31,8 +31,7 @@ namespace Jinja2CppLight {
 #define STATIC
 
 Template::Template( std::string sourceCode ) :
-    sourceCode( sourceCode ),
-    root( new Root() )
+    sourceCode( sourceCode )
 {}
 
 STATIC bool Template::isNumber( std::string astring, int *p_value ) {
@@ -66,6 +65,7 @@ Template&Template::setValue( std::string name, TupleValue value) {
 
 }
 std::string Template::render() {
+    std::unique_ptr<Root> root(new Root());
     size_t finalPos = eatSection(0, root.get() );
     if( finalPos != sourceCode.length() ) {
         throw render_error("some sourcecode found at end: " + sourceCode.substr( finalPos ) );

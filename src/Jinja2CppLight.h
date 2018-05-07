@@ -152,8 +152,6 @@ public:
     std::string sourceCode;
 
     ValueMap valueByName;
-//    std::vector< std::string > varNameStack;
-    std::unique_ptr<Root> root;
 
     // [[[cog
     // import cog_addheaders

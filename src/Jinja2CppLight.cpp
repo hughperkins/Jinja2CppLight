@@ -31,10 +31,8 @@ namespace Jinja2CppLight {
 #define STATIC
 
 Template::Template( std::string sourceCode ) :
-    sourceCode( sourceCode ) {
-    root = new Root();
-//    cout << "template::Template root: "  << root << endl;
-}
+    sourceCode( sourceCode )
+{}
 
 STATIC bool Template::isNumber( std::string astring, int *p_value ) {
     istringstream in( astring );
@@ -47,8 +45,6 @@ STATIC bool Template::isNumber( std::string astring, int *p_value ) {
 }
 VIRTUAL Template::~Template() {
     valueByName.clear();
-
-    delete root;
 }
 Template &Template::setValue( std::string name, int value ) {
     valueByName[ name ] = std::make_shared<IntValue>( value );
@@ -69,7 +65,8 @@ Template&Template::setValue( std::string name, TupleValue value) {
 
 }
 std::string Template::render() {
-    size_t finalPos = eatSection(0, root );
+    std::unique_ptr<Root> root(new Root());
+    size_t finalPos = eatSection(0, root.get() );
     if( finalPos != sourceCode.length() ) {
         throw render_error("some sourcecode found at end: " + sourceCode.substr( finalPos ) );
     }
@@ -92,12 +89,12 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
 //        cout << "controlChangeBegin: " << controlChangeBegin << endl;
         if( controlChangeBegin == string::npos ) {
             //updatedString += doSubstitutions( sourceCode.substr( pos ), valueByName );
-            Code *code = new Code();
+            std::unique_ptr<Code> code(new Code());
             code->startPos = pos;
             code->endPos = sourceCode.length();
 //            code->templateCode = sourceCode.substr( pos, sourceCode.length() - pos );
             code->templateCode = sourceCode.substr( code->startPos, code->endPos - code->startPos );
-            controlSection->sections.push_back( code );
+            controlSection->sections.push_back( std::move(code) );
             return sourceCode.length();
         } else {
             size_t controlChangeEnd = sourceCode.find( "%}", controlChangeBegin );
@@ -110,11 +107,11 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 if( splitControlChange.size() != 1 ) {
                     throw render_error("control section {% " + controlChange + " unrecognized" );
                 }
-                Code *code = new Code();
+                std::unique_ptr<Code> code(new Code());
                 code->startPos = pos;
                 code->endPos = controlChangeBegin;
                 code->templateCode = sourceCode.substr( code->startPos, code->endPos - code->startPos );
-                controlSection->sections.push_back( code );
+                controlSection->sections.push_back( std::move(code) );
                 return controlChangeBegin;
 //                if( tokenStack.size() == 0 ) {
 //                    throw render_error("control section {% " + controlChange + " unexpected: no current control stack items" );
@@ -129,11 +126,11 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
 //                varNameStack.erase( tokenStack.end() - 1, tokenStack.end() - 1 );
 //                cout << "token stack new size: " << tokenStack.size() << endl;
             } else if( splitControlChange[0] == "for" ) {
-                Code *code = new Code();
+                std::unique_ptr<Code> code(new Code());
                 code->startPos = pos;
                 code->endPos = controlChangeBegin;
                 code->templateCode = sourceCode.substr( code->startPos, code->endPos - code->startPos );
-                controlSection->sections.push_back( code );
+                controlSection->sections.push_back( std::move(code) );
 
                 string varname = splitControlChange[1];
                 if( splitControlChange[2] != "in" ) {
@@ -166,13 +163,12 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                     }
                     int beginValue = 0; // default for now...
     //                cout << "for loop start=" << beginValue << " end=" << endValue << endl;
-                    ForRangeSection *forSection = new ForRangeSection();
+                    std::unique_ptr<ForRangeSection> forSection(new ForRangeSection());
                     forSection->startPos = controlChangeEnd + 2;
                     forSection->loopStart = beginValue;
                     forSection->loopEnd = endValue;
                     forSection->varName = varname;
-                    pos = eatSection( controlChangeEnd + 2, forSection );
-                    controlSection->sections.push_back(forSection);
+                    pos = eatSection( controlChangeEnd + 2, forSection.get() );
                     size_t controlEndEndPos = sourceCode.find("%}", pos );
                     if( controlEndEndPos == string::npos ) {
                         throw render_error("No control end section found at: " + sourceCode.substr(pos ) );
@@ -183,6 +179,7 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                         throw render_error("No control end section found, expected '{% endfor %}', got '" + controlEnd + "'" );
                     }
                     forSection->endPos = controlEndEndPos + 2;
+                    controlSection->sections.push_back(std::move(forSection));
                     pos = controlEndEndPos + 2;
                 } else {
                     const std::string name = rangeString;
@@ -194,12 +191,12 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                     } else {
                         throw render_error("for loop var " + name + " not recognized");
                     }
-                    ForSection *forSection = new ForSection();
+                    std::unique_ptr<ForSection> forSection(new ForSection());
                     forSection->varName = varname;
                     forSection->tupVarName = name;
                     
-                    pos = eatSection( controlChangeEnd + 2, forSection );
-                    controlSection->sections.push_back(forSection);
+                    pos = eatSection( controlChangeEnd + 2, forSection.get() );
+                    controlSection->sections.push_back(std::move(forSection));
                     size_t controlEndEndPos = sourceCode.find("%}", pos );
                     if( controlEndEndPos == string::npos ) {
                         throw render_error("No control end section found at: " + sourceCode.substr(pos ) );
@@ -212,11 +209,11 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                     pos = controlEndEndPos + 2;
                 }
             } else if (splitControlChange[0] == "if") {
-                Code *code = new Code();
+                std::unique_ptr<Code> code(new Code());
                 code->startPos = pos;
                 code->endPos = controlChangeBegin;
                 code->templateCode = sourceCode.substr(code->startPos, code->endPos - code->startPos);
-                controlSection->sections.push_back(code);
+                controlSection->sections.push_back(std::move(code));
                 const string word = splitControlChange[1];
                 if (JINJA2_TRUE == word)  {
                     ;
@@ -229,10 +226,10 @@ int Template::eatSection( int pos, ControlSection *controlSection ) {
                 else {
                     ;
                 }
-                IfSection* ifSection = new IfSection(controlChange);
+                std::unique_ptr<IfSection> ifSection(new IfSection(controlChange));
 
-                pos = eatSection(controlChangeEnd + 2, ifSection);
-                controlSection->sections.push_back(ifSection);
+                pos = eatSection(controlChangeEnd + 2, ifSection.get());
+                controlSection->sections.push_back(std::move(ifSection));
                 size_t controlEndEndPos = sourceCode.find("%}", pos);
                 if (controlEndEndPos == string::npos) {
                     throw render_error("No control end of any section found at: " + sourceCode.substr(pos));

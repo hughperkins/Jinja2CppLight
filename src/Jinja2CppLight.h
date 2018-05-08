@@ -152,8 +152,6 @@ public:
     std::string sourceCode;
 
     ValueMap valueByName;
-//    std::vector< std::string > varNameStack;
-    Root *root;
 
     // [[[cog
     // import cog_addheaders
@@ -177,7 +175,10 @@ public:
 
 class ControlSection {
 public:
-    std::vector< ControlSection * >sections;
+    
+    virtual ~ControlSection() { sections.clear(); }
+    
+    std::vector< std::unique_ptr<ControlSection> >sections;
     virtual std::string render( ValueMap &valueByName ) = 0;
     virtual void print() {
         print("");

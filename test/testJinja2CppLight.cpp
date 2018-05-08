@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "test/gtest_supp.h"
@@ -34,6 +35,59 @@ TEST( testJinja2CppLight, basicsubstitution ) {
     )DELIM";
     EXPECT_EQ( expectedResult, result );
 }
+/*
+TEST( testJinja2CppLight, vectorsubstitution ) {
+    string source = R"DELIM(
+        Here's the list: {{ values }}...
+        {% if maybe %}{{ maybe }}{% endif %}
+        {% if maybenot %}{{ maybenot }}{% endif %}
+        We're going to print it anyway: {{ maybenot }}
+    )DELIM";
+    
+    std::vector<std::string> values = { "one", "two", "three" };
+    std::vector<std::string> maybe = { "There is one" };
+    std::vector<std::string> maybenot;
+    Template mytemplate( source );
+    mytemplate.setValue( "values", values );
+    mytemplate.setValue( "maybe", maybe );
+    mytemplate.setValue( "maybenot", maybenot );
+    string result = mytemplate.render();
+    const string expectedResult = R"DELIM(
+        Here's the list: one two three...
+        There is one
+        
+        We're going to print it anyway: 
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+}
+TEST( testJinja2CppLight, forloop ) {
+    string source = R"DELIM(
+        Shopping list:{% for item in items %}
+          - {{ item }}{% endfor %}
+    )DELIM";
+    
+    std::vector<std::string> shopList = { "eggs", "milk", "vodka" };
+    Template mytemplate0( source );
+    mytemplate0.setValue( "items", shopList );
+    string result = mytemplate0.render();
+    string expectedResult = R"DELIM(
+        Shopping list:
+          - eggs
+          - milk
+          - vodka
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+    
+    shopList.clear();
+    Template mytemplate1( source );
+    mytemplate1.setValue( "items", shopList );
+    result = mytemplate1.render();
+    expectedResult = R"DELIM(
+        Shopping list:
+    )DELIM";
+    EXPECT_EQ( expectedResult, result );
+}
+*/
 TEST( testSpeedTemplates, namemissing ) {
     string source = R"DELIM(
         This is my {{avalue}} template.

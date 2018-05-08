@@ -202,9 +202,10 @@ public:
     }
 };
 
-class ForSection : public ControlSection {
+class ForRangeSection : public ControlSection {
 public:
-    std::shared_ptr<TupleValue> values;
+    int loopStart;
+    int loopEnd;
     std::string varName;
     int startPos;
     int endPos;
@@ -214,19 +215,55 @@ public:
         if( valueByName.find( varName ) != valueByName.end() ) {
             throw render_error("variable " + varName + " already exists in this context" );
         }
-        for( auto &v : values->values ) {
-            valueByName[varName] = v;
+        valueByName[varName] = std::make_shared<IntValue>( 0 );
+        for (auto i = loopStart; i < loopEnd; ++i ){
+            dynamic_cast<IntValue*>(valueByName[varName].get())->value = i;
             for( size_t j = 0; j < sections.size(); j++ ) {
                 result += sections[j]->render( valueByName );
             }
-            valueByName.erase( varName );
         }
+        valueByName.erase( varName );
         return result;
     }
     //Container *contents;
     virtual void print( std::string prefix ) {
         std::cout << prefix << "For ( " << varName << " in range( ) {" << std::endl;
         for( int i = 0; i < (int)sections.size(); i++ ) {
+            sections[i]->print( prefix + "    " );
+        }
+        std::cout << prefix << "}" << std::endl;
+    }
+};
+
+class ForSection : public ControlSection {
+public:
+    std::string varName;
+    std::string tupVarName;
+    virtual std::string render( ValueMap &valueByName ) {
+        std::string result = "";
+        if( valueByName.find( varName ) != valueByName.end() ) {
+            throw render_error("variable " + varName + " already exists in this context" );
+        }
+        
+        const std::shared_ptr<Value> &val = valueByName.at( tupVarName ); // throws if something happened to the TupleValue
+        const TupleValue *tupValue = dynamic_cast< TupleValue * >( val.get() );
+        if (!tupValue) {
+            throw render_error("variable " + tupVarName + " no longer valid in context" );
+        }
+        const std::vector<std::shared_ptr<Value>> &tupValues = tupValue->values;
+        for ( auto itr = tupValues.cbegin(); itr != tupValues.cend(); ++itr ) {
+            valueByName[ varName ] = *itr;
+            for( std::size_t j = 0; j < sections.size(); ++j) {
+                result += sections[j]->render( valueByName );
+            }
+            valueByName.erase( varName );
+        }
+        
+        return result;
+    }
+    virtual void print( std::string prefix ) {
+        std::cout << prefix << "For ( " << varName << " in " << tupVarName << " ) {" << std::endl;
+        for( std::size_t i = 0; i < sections.size(); i++ ){
             sections[i]->print( prefix + "    " );
         }
         std::cout << prefix << "}" << std::endl;

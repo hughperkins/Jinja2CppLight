@@ -152,8 +152,6 @@ public:
     std::string sourceCode;
 
     ValueMap valueByName;
-//    std::vector< std::string > varNameStack;
-    Root *root;
 
     // [[[cog
     // import cog_addheaders
@@ -166,7 +164,7 @@ public:
     Template &setValue( std::string name, int value );
     Template &setValue( std::string name, float value );
     Template &setValue( std::string name, std::string value );
-    Template &setValue( std::string name, TupleValue value );
+    Template&setValue( std::string name, TupleValue value);
     std::string render();
     void print(ControlSection *section);
     int eatSection( int pos, ControlSection *controlSection );
@@ -177,7 +175,10 @@ public:
 
 class ControlSection {
 public:
-    std::vector< ControlSection * >sections;
+    
+    virtual ~ControlSection() { sections.clear(); }
+    
+    std::vector< std::unique_ptr<ControlSection> >sections;
     virtual std::string render( ValueMap &valueByName ) = 0;
     virtual void print() {
         print("");

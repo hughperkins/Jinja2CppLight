@@ -214,4 +214,3 @@ TEST(testSpeedTemplates, ifUnexpectedExpression) {
     }
     EXPECT_EQ(true, threw);
 }
-

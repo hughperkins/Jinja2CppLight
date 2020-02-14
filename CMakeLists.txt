@@ -1,9 +1,12 @@
+project(Jinja2CppLight)
 cmake_minimum_required(VERSION 2.8)
 
 if (NOT CMAKE_BUILD_TYPE)
     message("Setting build type to 'RelWithDebInfo'")
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
+
+option(JINJA2_BUILD_TESTS "Build tests" ON)
 
 set (LIB_BUILD_TYPE STATIC)
 if(UNIX)
@@ -38,20 +41,28 @@ if(PYTHON_AVAILABLE)
     add_dependencies(Jinja2CppLight cog)
 endif(PYTHON_AVAILABLE)
 
-if(UNIX)
-    add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
-    target_link_libraries(jinja2cpplight_gtest pthread)
-else()
-    add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
+if(JINJA2_BUILD_TESTS)
+    if(UNIX)
+        add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
+        target_link_libraries(jinja2cpplight_gtest pthread)
+    else()
+        add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
+    endif()
+    target_include_directories(jinja2cpplight_gtest PRIVATE thirdparty/gtest)
+
+    add_executable(jinja2cpplight_unittests thirdparty/gtest/gtest_main.cc test/testJinja2CppLight.cpp test/teststringhelper.cpp)
+    target_link_libraries(jinja2cpplight_unittests jinja2cpplight_gtest)
+    target_link_libraries(jinja2cpplight_unittests Jinja2CppLight)
+    target_include_directories(jinja2cpplight_unittests PRIVATE thirdparty/gtest)
+
+    INSTALL(TARGETS jinja2cpplight_gtest jinja2cpplight_unittests
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+    )
 endif()
-target_include_directories(jinja2cpplight_gtest PRIVATE thirdparty/gtest)
 
-add_executable(jinja2cpplight_unittests thirdparty/gtest/gtest_main.cc test/testJinja2CppLight.cpp test/teststringhelper.cpp)
-target_link_libraries(jinja2cpplight_unittests jinja2cpplight_gtest)
-target_link_libraries(jinja2cpplight_unittests Jinja2CppLight)
-target_include_directories(jinja2cpplight_unittests PRIVATE thirdparty/gtest)
-
- INSTALL(TARGETS jinja2cpplight_gtest jinja2cpplight_unittests Jinja2CppLight
+INSTALL(TARGETS Jinja2CppLight
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
